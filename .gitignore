@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+.env
+data/UpdatedResumeDataSet.csv
+data/processed_resumes.csv
+Thumbs.db
+.DS_Store
