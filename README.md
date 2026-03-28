@@ -57,16 +57,21 @@ An NLP-powered AI tool that automatically screens resumes and predicts the most 
 \## 🧠 ML Model Comparison
 
 
-
+### TF-IDF Based Models
 | Model | Test Accuracy | CV Accuracy |
-
 |-------|--------------|-------------|
-
-| \*\*Random Forest\*\* | \*\*100%\*\* | \*\*99.6%\*\* |
-
+| **Random Forest** | **100%** | **99.6%** |
 | Logistic Regression | 99.5% | 99.3% |
-
 | SVM | 99.5% | 99.6% |
+
+### BERT Based Models (DistilBERT)
+| Model | Test Accuracy | CV Accuracy |
+|-------|--------------|-------------|
+| Logistic Regression + BERT | 99.5% | 99.6% |
+| Random Forest + BERT | 99.5% | 99.6% |
+
+> Both TF-IDF and BERT achieve ~99.6% CV accuracy.
+> BERT provides richer 768-dim semantic embeddings vs 1500 TF-IDF features.
 
 
 
