@@ -314,6 +314,23 @@ elif st.session_state.page == "stats":
         st.markdown("#### Confusion Matrix")
         st.image('notebooks/confusion_matrix.png')
 
+    st.markdown("#### 🤖 TF-IDF vs BERT Comparison")
+    st.image('notebooks/tfidf_vs_bert.png')
+    st.markdown("""
+    <div style='background:rgba(99,102,241,0.15);
+                border-radius:12px; padding:20px;
+                border:1px solid rgba(99,102,241,0.3)'>
+        <strong>💡 Key Insight</strong><br><br>
+        <span style='color:#94a3b8'>
+        Both TF-IDF and BERT achieve ~99.6% CV accuracy on this dataset.
+        Resume text has highly domain-specific vocabulary making it
+        linearly separable — both classical and deep learning approaches
+        work exceptionally well. BERT provides richer semantic embeddings
+        (768 dimensions vs 1500 TF-IDF features) and would generalize
+        better on unseen resume formats.
+        </span>
+    </div>""", unsafe_allow_html=True)
+
     st.markdown("#### ✅ All 25 Supported Job Categories")
     cols = st.columns(5)
     for i, cat in enumerate(categories):
