@@ -479,7 +479,7 @@ elif st.session_state.page == "stats":
         Resume text has highly domain-specific vocabulary making it
         linearly separable — both classical and deep learning approaches
         work exceptionally well. BERT provides richer semantic embeddings
-        (768 dimensions vs 1500 TF-IDF features) and would generalize
+        (384 dimensions vs 1500 TF-IDF features) and would generalize
         better on unseen resume formats.
         </span>
     </div>""", unsafe_allow_html=True)
@@ -508,9 +508,9 @@ elif st.session_state.page == "about":
             ("1", "Text Extraction", "Reads PDF or accepts pasted text"),
             ("2", "Text Cleaning", "Removes URLs, symbols, special characters"),
             ("3", "Stopword Removal", "Removes common words like 'the', 'is'"),
-            ("4", "Lemmatization", "Reduces words to root form"),
+            ("4", "Stopword Filtering", "Removes common words like 'the', 'is'"),
             ("5", "TF-IDF Vectorization", "Converts text to 1500 numerical features"),
-            ("6", "ML Classification", "Random Forest predicts from 25 categories"),
+            ("6", "ML Classification", "Best Pipeline predicts from 25 categories"),
         ]
         for num, title, desc in steps:
             st.markdown(f"""
@@ -522,12 +522,12 @@ elif st.session_state.page == "about":
     with col2:
         st.markdown("#### 📦 Tech Stack")
         techs = [
-            ("🐍", "Python 3.11", "Core language"),
-            ("📝", "NLTK", "Text preprocessing & lemmatization"),
-            ("🔢", "TF-IDF", "Text vectorization (1500 features)"),
-            ("🌲", "Scikit-learn", "ML models & evaluation"),
-            ("📄", "PyPDF2", "PDF text extraction"),
-            ("🚀", "Streamlit", "Web app framework"),
+            ("🐍", "Python 3.11",   "Core language"),
+            ("🔤", "sklearn",       "Stopword filtering (ENGLISH_STOP_WORDS)"),
+            ("🔢", "TF-IDF",        "Text vectorization (1500 features)"),
+            ("🌲", "Scikit-learn",  "ML pipelines & evaluation"),
+            ("📄", "pypdf",         "PDF text extraction"),
+            ("🚀", "Streamlit",     "Web app framework"),
         ]
         for emoji, name, desc in techs:
             st.markdown(f"""
