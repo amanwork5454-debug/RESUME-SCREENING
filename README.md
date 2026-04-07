@@ -1,6 +1,6 @@
 # 🤖 Resume Screening AI
 
-An NLP-powered AI tool that automatically screens resumes and predicts the most suitable job category using Machine Learning and Transformer models (DistilBERT).
+An NLP-powered AI tool that automatically screens resumes and predicts the most suitable job category using Machine Learning and Transformer models (all-MiniLM-L6-v2).
 
 🔗 **Live Demo:** https://aman-resume-screening.streamlit.app
 📂 **GitHub:** https://github.com/amanwork5454-debug/RESUME-SCREENING
@@ -14,7 +14,7 @@ An NLP-powered AI tool that automatically screens resumes and predicts the most 
 - 🛠️ **Skill extraction** — auto-detects Languages, ML/AI, Data, Cloud, and Web skills
 - 🔍 **Resume–JD Match Ranker** — paste a Job Description, upload up to 5 resumes, get them ranked by cosine similarity
 - 🤖 3 ML models compared (TF-IDF based)
-- 🧠 DistilBERT transformer model implemented & compared
+- 🧠 all-MiniLM-L6-v2 transformer model implemented & compared
 - 🚀 Deployed live on Streamlit Cloud
 
 ---
@@ -22,12 +22,11 @@ An NLP-powered AI tool that automatically screens resumes and predicts the most 
 ## 🔬 How It Works
 1. **Text Extraction** — Reads PDF or accepts pasted text
 2. **Text Cleaning** — Removes URLs, symbols, special characters
-3. **Stopword Removal** — Removes common words like 'the', 'is'
-4. **Lemmatization** — Reduces words to root form
-5. **TF-IDF Vectorization** — Converts text to 1500 numerical features
-6. **ML Classification** — Predicts job category from 25 options
-7. **Skill Detection** — Keyword matching across 5 technology domains
-8. **JD Matching** — TF-IDF cosine similarity between job description and resumes
+3. **Stopword Filtering** — Removes common words using sklearn ENGLISH_STOP_WORDS
+4. **TF-IDF Vectorization** — Converts text to 1500 numerical features
+5. **ML Classification** — Predicts job category from 25 options
+6. **Skill Detection** — Keyword matching across 5 technology domains
+7. **JD Matching** — TF-IDF cosine similarity between job description and resumes
 
 ---
 
@@ -89,7 +88,7 @@ SAP Developer, Advocate, Arts, Operations Manager
 | Technology | Usage |
 |------------|-------|
 | Python 3.11 | Core language |
-| NLTK | Text preprocessing, lemmatization |
+| sklearn ENGLISH_STOP_WORDS | Stopword filtering |
 | TF-IDF | Text vectorization (1500 features) |
 | Scikit-learn | ML pipelines, evaluation, cross validation, cosine similarity |
 | HuggingFace | all-MiniLM-L6-v2 transformer model |
@@ -109,11 +108,11 @@ resume-screening/
 ├── README.md                       # Project documentation
 ├── models/
 │   ├── resume_model.pkl            # TF-IDF + Random Forest model
-│   └── bert_resume_model.pkl       # DistilBERT + Logistic Regression
+│   └── bert_resume_model.pkl       # all-MiniLM-L6-v2 + best classifier
 ├── notebooks/
 │   ├── 01_preprocessing.py         # Text cleaning & NLP pipeline
 │   ├── 02_model.py                 # TF-IDF model training & evaluation
-│   ├── 03_bert_model.py            # DistilBERT training & comparison
+│   ├── 03_bert_model.py            # all-MiniLM-L6-v2 training & comparison
 │   ├── category_distribution.png   # Resume count by category
 │   ├── confusion_matrix.png        # Model confusion matrix
 │   ├── model_comparison.png        # TF-IDF models comparison

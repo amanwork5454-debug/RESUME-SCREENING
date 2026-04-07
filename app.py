@@ -505,12 +505,12 @@ elif st.session_state.page == "about":
     with col1:
         st.markdown("#### 🔬 How It Works")
         steps = [
-            ("1", "Text Extraction", "Reads PDF or accepts pasted text"),
-            ("2", "Text Cleaning", "Removes URLs, symbols, special characters"),
-            ("3", "Stopword Removal", "Removes common words like 'the', 'is'"),
-            ("4", "Stopword Filtering", "Removes common words like 'the', 'is'"),
-            ("5", "TF-IDF Vectorization", "Converts text to 1500 numerical features"),
-            ("6", "ML Classification", "Best Pipeline predicts from 25 categories"),
+            ("1", "Text Extraction",     "Reads PDF or accepts pasted text"),
+            ("2", "Text Cleaning",       "Removes URLs, symbols, special characters"),
+            ("3", "Stopword Filtering",  "Removes common words using sklearn ENGLISH_STOP_WORDS"),
+            ("4", "TF-IDF Vectorization","Converts text to 1500 numerical features"),
+            ("5", "ML Classification",   "Best Pipeline predicts from 25 categories"),
+            ("6", "Skill Detection",     "Keyword matching across 5 technology domains"),
         ]
         for num, title, desc in steps:
             st.markdown(f"""
