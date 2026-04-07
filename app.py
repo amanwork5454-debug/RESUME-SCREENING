@@ -1,15 +1,9 @@
 import streamlit as st
 import pickle
 import re
-import nltk
-from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
 import PyPDF2
 from sklearn.metrics.pairwise import cosine_similarity
-
-nltk.download('stopwords', quiet=True)
-nltk.download('wordnet', quiet=True)
-nltk.download('omw-1.4', quiet=True)
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 
 # ── Page Config ──
 st.set_page_config(
@@ -172,11 +166,8 @@ def clean_resume(text):
     return text.lower().strip()
 
 def lemmatize_text(text):
-    lemmatizer = WordNetLemmatizer()
-    stop_words = set(stopwords.words('english'))
     words = text.split()
-    words = [lemmatizer.lemmatize(w) for w in words
-             if w not in stop_words and len(w) > 2]
+    words = [w for w in words if w not in ENGLISH_STOP_WORDS and len(w) > 2]
     return ' '.join(words)
 
 def extract_text_from_pdf(pdf_file):
