@@ -40,15 +40,16 @@ An NLP-powered AI tool that automatically screens resumes and predicts the most 
 | Logistic Regression | 99.5% | 99.3% |
 | SVM | 99.5% | 99.6% |
 
-### BERT Based Models (DistilBERT)
+### BERT-Based Models (all-MiniLM-L6-v2)
 | Model | Test Accuracy | CV Accuracy |
 |-------|--------------|-------------|
 | Logistic Regression + BERT | 99.5% | 99.6% |
 | Random Forest + BERT | 99.5% | 99.6% |
 
 > **Key Insight:** Both TF-IDF and BERT achieve ~99.6% CV accuracy.
-> BERT provides richer 768-dimensional semantic embeddings vs
-> 1500 TF-IDF features and generalizes better on unseen resume formats.
+> `all-MiniLM-L6-v2` produces 384-dimensional semantic sentence embeddings
+> and generalizes better on unseen resume formats than 1500 TF-IDF sparse
+> features.
 
 ---
 
@@ -90,10 +91,10 @@ SAP Developer, Advocate, Arts, Operations Manager
 | Python 3.11 | Core language |
 | NLTK | Text preprocessing, lemmatization |
 | TF-IDF | Text vectorization (1500 features) |
-| Scikit-learn | ML models, evaluation, cross validation, cosine similarity |
-| HuggingFace | DistilBERT transformer model |
-| Sentence-Transformers | BERT embeddings (768 dimensions) |
-| PyPDF2 | PDF text extraction |
+| Scikit-learn | ML pipelines, evaluation, cross validation, cosine similarity |
+| HuggingFace | all-MiniLM-L6-v2 transformer model |
+| Sentence-Transformers | BERT embeddings (384 dimensions) |
+| pypdf | PDF text extraction |
 | Streamlit | Web dashboard |
 | Streamlit Cloud | Deployment |
 | Git, GitHub | Version control |
@@ -129,7 +130,26 @@ resume-screening/
 
 ---
 
-## 👤 Author
+## ⚙️ Reproducing the Models
+
+After cloning the repo and installing dependencies (`pip install -r requirements.txt`):
+
+```bash
+python notebooks/01_preprocessing.py   # clean & lemmatise the dataset
+python notebooks/02_model.py            # train TF-IDF pipelines → models/resume_model.pkl
+python notebooks/03_bert_model.py       # train BERT model       → models/bert_resume_model.pkl
+streamlit run app.py
+```
+
+> **Note (data leakage fix):** `02_model.py` now wraps each classifier inside a
+> `sklearn.Pipeline` so that the TF-IDF vectoriser is fitted **only on the
+> training split**.  The pre-built `.pkl` files in the `models/` directory were
+> trained with the old (leaky) code; retrain from scratch with the dataset to
+> get correctly isolated models.
+
+---
+
+
 **Aman Pokhriyal**
 - GitHub: https://github.com/amanwork5454-debug
 - Live Project: https://aman-resume-screening.streamlit.app

@@ -1,9 +1,11 @@
 import streamlit as st
 import pickle
 import re
-import PyPDF2
+import pypdf
+import nltk
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords as nltk_stopwords
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 
 # ── Page Config ──
 st.set_page_config(
@@ -142,9 +144,23 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# ── NLTK Resources ──
+@st.cache_resource
+def _load_nltk():
+    nltk.download('wordnet', quiet=True)
+    nltk.download('omw-1.4', quiet=True)
+    nltk.download('stopwords', quiet=True)
+    return WordNetLemmatizer(), set(nltk_stopwords.words('english'))
+
+_lemmatizer, _stop_words = _load_nltk()
+
 # ── Load Model ──
-with open('models/resume_model.pkl', 'rb') as f:
-    model_data = pickle.load(f)
+@st.cache_resource
+def _load_model():
+    with open('models/resume_model.pkl', 'rb') as f:
+        return pickle.load(f)
+
+model_data = _load_model()
 
 model      = model_data['model']
 tfidf      = model_data['tfidf']
@@ -167,26 +183,38 @@ def clean_resume(text):
 
 def lemmatize_text(text):
     words = text.split()
-    words = [w for w in words if w not in ENGLISH_STOP_WORDS and len(w) > 2]
+    words = [_lemmatizer.lemmatize(w) for w in words
+             if w not in _stop_words and len(w) > 2]
     return ' '.join(words)
 
 def extract_text_from_pdf(pdf_file):
-    pdf_reader = PyPDF2.PdfReader(pdf_file)
-    text = ''
-    for page in pdf_reader.pages:
-        text += page.extract_text()
-    return text
+    try:
+        reader = pypdf.PdfReader(pdf_file)
+        text = ''
+        for page in reader.pages:
+            text += page.extract_text() or ''
+        return text
+    except Exception as e:
+        st.error(f"⚠️ Could not read PDF: {e}")
+        return ''
 
 def predict_category(text):
-    cleaned    = clean_resume(text)
-    processed  = lemmatize_text(cleaned)
-    vectorized = tfidf.transform([processed])
-    prediction = model.predict(vectorized)[0]
-    probs      = model.predict_proba(vectorized)[0]
-    category   = le.inverse_transform([prediction])[0]
+    cleaned   = clean_resume(text)
+    processed = lemmatize_text(cleaned)
+    # Support both Pipeline format (new) and standalone classifier format (old pkl)
+    if hasattr(model, 'named_steps'):
+        prediction = model.predict([processed])[0]
+        probs      = model.predict_proba([processed])[0]
+    else:
+        vectorized = tfidf.transform([processed])
+        prediction = model.predict(vectorized)[0]
+        probs      = model.predict_proba(vectorized)[0]
+    category = le.inverse_transform([prediction])[0]
     return category, probs
 
 # ── Skill Vocabulary ──
+MAX_RESUMES = 5
+
 SKILLS_VOCABULARY = {
     "Languages":    ["python", "java", "javascript", "typescript", "c++", "c#",
                      "scala", "kotlin", "swift", "go", "rust", "php", "ruby",
@@ -333,7 +361,7 @@ if st.session_state.page == "screen":
 elif st.session_state.page == "match":
     st.markdown("### 🎯 Resume–JD Match Ranker")
     st.markdown(
-        "<p style='color:#94a3b8'>Paste a Job Description and upload up to 5 resumes "
+        f"<p style='color:#94a3b8'>Paste a Job Description and upload up to {MAX_RESUMES} resumes "
         "— they are ranked by cosine similarity so you can see who fits best.</p>",
         unsafe_allow_html=True
     )
@@ -350,7 +378,7 @@ elif st.session_state.page == "match":
         )
 
     with col_uploads:
-        st.markdown("#### 📤 Upload Resumes (up to 5 PDFs)")
+        st.markdown(f"#### 📤 Upload Resumes (up to {MAX_RESUMES} PDFs)")
         uploaded_resumes = st.file_uploader(
             "", type=["pdf"],
             accept_multiple_files=True,
@@ -358,7 +386,7 @@ elif st.session_state.page == "match":
             key="resume_uploads"
         )
         if uploaded_resumes:
-            count = min(len(uploaded_resumes), 5)
+            count = min(len(uploaded_resumes), MAX_RESUMES)
             st.info(f"✅ {count} resume(s) ready")
         match_btn = st.button("🔍 Rank Resumes")
 
@@ -372,7 +400,7 @@ elif st.session_state.page == "match":
             st.markdown("### 📊 Ranking Results")
             with st.spinner("🧠 Computing match scores..."):
                 ranked = []
-                for f in uploaded_resumes[:5]:
+                for f in uploaded_resumes[:MAX_RESUMES]:
                     resume_text = extract_text_from_pdf(f)
                     score    = compute_jd_match(jd_text, resume_text)
                     category, _ = predict_category(resume_text)

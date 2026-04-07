@@ -19,11 +19,11 @@ le = LabelEncoder()
 df['Category_encoded'] = le.fit_transform(df['Category'])
 print(f"Categories: {len(le.classes_)}")
 
-# ── Load DistilBERT ──
-print("\n🔄 Loading DistilBERT model...")
+# ── Load Sentence Transformer ──
+print("🔄 Loading all-MiniLM-L6-v2 (sentence-transformers)...")
 print("(This will download ~90MB on first run)")
-bert_model = SentenceTransformer('distilbert-base-nli-mean-tokens')
-print("✅ DistilBERT loaded!")
+bert_model = SentenceTransformer('all-MiniLM-L6-v2')
+print("✅ all-MiniLM-L6-v2 loaded!")
 
 # ── Generate BERT Embeddings ──
 print("\n🔄 Generating embeddings for all resumes...")
@@ -65,13 +65,14 @@ for name, model in models.items():
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
     acc = accuracy_score(y_test, y_pred)
-    cv  = cross_val_score(model, X, y, cv=5, scoring='accuracy').mean()
+    # CV only on training data — keeps test set truly held-out
+    cv  = cross_val_score(model, X_train, y_train, cv=5, scoring='accuracy').mean()
     results[name] = {'model': model, 'accuracy': acc, 'cv': cv}
     print(f"  Accuracy : {acc*100:.1f}%")
     print(f"  CV Acc   : {cv*100:.1f}%")
 
-# ── Best Model ──
-best_name = max(results, key=lambda x: results[x]['accuracy'])
+# ── Best Model (selected by CV accuracy) ──
+best_name = max(results, key=lambda x: results[x]['cv'])
 best = results[best_name]
 print(f"\n✅ Best BERT Model: {best_name}")
 print(f"   Accuracy: {best['accuracy']*100:.1f}%")
@@ -114,7 +115,7 @@ print("✅ Comparison chart saved")
 # ── Save BERT Model ──
 bert_model_data = {
     'classifier':  best['model'],
-    'bert_model':  'distilbert-base-nli-mean-tokens',
+    'bert_model':  'all-MiniLM-L6-v2',
     'le':          le,
     'model_name':  best_name,
     'accuracy':    best['accuracy'],
