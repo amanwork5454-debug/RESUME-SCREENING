@@ -11,10 +11,10 @@ An NLP-powered AI tool that automatically screens resumes and predicts the most 
 - 📄 Upload PDF resume or paste text directly
 - 🎯 Predicts job category from 25 options instantly
 - 📊 Shows top 5 matching categories with confidence scores
-- 🛠️ **Skill extraction** — auto-detects Languages, ML/AI, Data, Cloud, and Web skills
+- 🛠️ **Skill extraction** — auto-detects Languages, ML/AI, Data, Cloud, and Web skills with abbreviation support (e.g. `js` → JavaScript, `k8s` → Kubernetes, `ml` → Machine Learning)
+- 🤖 **TF-IDF ↔ BERT toggle** — switch between fast TF-IDF and semantic `all-MiniLM-L6-v2` predictions directly in the UI
 - 🔍 **Resume–JD Match Ranker** — paste a Job Description, upload up to 5 resumes, get them ranked by cosine similarity
-- 🤖 3 ML models compared (TF-IDF based)
-- 🧠 all-MiniLM-L6-v2 transformer model implemented & compared
+- 🧪 **22 unit tests** covering text cleaning, stop-word filtering, and skill extraction
 - 🚀 Deployed live on Streamlit Cloud
 
 ---
@@ -104,10 +104,11 @@ SAP Developer, Advocate, Arts, Operations Manager
 ```
 resume-screening/
 ├── app.py                          # Streamlit dashboard
+├── utils.py                        # Shared NLP utilities (cleaning, skill extraction)
 ├── requirements.txt                # Pinned Python dependencies
 ├── README.md                       # Project documentation
 ├── models/
-│   ├── resume_model.pkl            # TF-IDF + Random Forest model
+│   ├── resume_model.pkl            # TF-IDF + Random Forest pipeline
 │   └── bert_resume_model.pkl       # all-MiniLM-L6-v2 + best classifier
 ├── notebooks/
 │   ├── 01_preprocessing.py         # Text cleaning & NLP pipeline
@@ -117,7 +118,10 @@ resume-screening/
 │   ├── confusion_matrix.png        # Model confusion matrix
 │   ├── model_comparison.png        # TF-IDF models comparison
 │   └── tfidf_vs_bert.png           # TF-IDF vs BERT comparison
+├── tests/
+│   └── test_utils.py               # 22 unit tests for core utilities
 └── data/
+    ├── README.md                   # Dataset download instructions
     └── UpdatedResumeDataSet.csv    # Not in GitHub (gitignored)
 ```
 
@@ -138,6 +142,12 @@ python notebooks/01_preprocessing.py   # clean & lemmatise the dataset
 python notebooks/02_model.py            # train TF-IDF pipelines → models/resume_model.pkl
 python notebooks/03_bert_model.py       # train BERT model       → models/bert_resume_model.pkl
 streamlit run app.py
+```
+
+Run the test suite:
+
+```bash
+pytest tests/ -v
 ```
 
 > **Note (data leakage fix):** `02_model.py` now wraps each classifier inside a

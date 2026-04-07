@@ -1,9 +1,11 @@
 import streamlit as st
 import pickle
-import re
 import pypdf
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+from utils import (
+    clean_resume, lemmatize_text, extract_skills,
+    SKILLS, DOMAIN_BADGE_CLASS,
+)
 
 # ── Page Config ──
 st.set_page_config(
@@ -273,21 +275,6 @@ cv         = model_data['cv']
 categories = model_data['categories']
 
 # ── Helper Functions ──
-def clean_resume(text):
-    text = re.sub(r'http\S+\s*', ' ', text)
-    text = re.sub(r'RT|cc', ' ', text)
-    text = re.sub(r'#\S+', ' ', text)
-    text = re.sub(r'@\S+', ' ', text)
-    text = re.sub(r'[^\w\s]', ' ', text)
-    text = re.sub(r'[^\x00-\x7f]', ' ', text)
-    text = re.sub(r'\s+', ' ', text)
-    return text.lower().strip()
-
-def lemmatize_text(text):
-    words = text.split()
-    words = [w for w in words if w not in ENGLISH_STOP_WORDS and len(w) > 2]
-    return ' '.join(words)
-
 def extract_text_from_pdf(pdf_file):
     try:
         reader = pypdf.PdfReader(pdf_file)
@@ -295,7 +282,7 @@ def extract_text_from_pdf(pdf_file):
         for page in reader.pages:
             text += page.extract_text() or ''
         return text
-    except Exception as e:
+    except (pypdf.errors.PdfReadError, pypdf.errors.PdfStreamError, ValueError) as e:
         st.error(f"⚠️ Could not read PDF: {e}")
         return ''
 
@@ -313,34 +300,30 @@ def predict_category(text):
     category = le.inverse_transform([prediction])[0]
     return category, probs
 
-# ── Skill Vocabulary ──
+# ── BERT Model (lazy-loaded, optional) ──
+@st.cache_resource(show_spinner=False)
+def _load_bert():
+    """Load BERT pkl + SentenceTransformer encoder. Returns (bert_data, encoder) or (None, None)."""
+    try:
+        from sentence_transformers import SentenceTransformer
+        with open('models/bert_resume_model.pkl', 'rb') as f:
+            bert_data = pickle.load(f)
+        encoder = SentenceTransformer(bert_data['bert_model'])
+        return bert_data, encoder
+    except Exception:
+        return None, None
+
+def predict_category_bert(text, bert_data, encoder):
+    cleaned   = clean_resume(text)
+    processed = lemmatize_text(cleaned)
+    embedding = encoder.encode([processed])
+    prediction = bert_data['classifier'].predict(embedding)[0]
+    probs      = bert_data['classifier'].predict_proba(embedding)[0]
+    category   = bert_data['le'].inverse_transform([prediction])[0]
+    return category, probs
+
+# ── JD matching ──
 MAX_RESUMES = 5
-
-SKILLS_VOCABULARY = {
-    "Languages":    ["python", "java", "javascript", "typescript", "c++", "c#",
-                     "scala", "kotlin", "swift", "go", "rust", "php", "ruby",
-                     "matlab", "julia"],
-    "ML / AI":      ["machine learning", "deep learning", "nlp",
-                     "computer vision", "tensorflow", "pytorch", "keras",
-                     "scikit-learn", "bert", "transformers", "xgboost",
-                     "lightgbm", "reinforcement learning", "llm"],
-    "Data":         ["sql", "pandas", "numpy", "spark", "hadoop", "kafka",
-                     "tableau", "power bi", "postgresql", "mysql", "mongodb",
-                     "airflow", "dbt"],
-    "Cloud / DevOps": ["aws", "azure", "gcp", "docker", "kubernetes", "git",
-                       "linux", "terraform", "jenkins"],
-    "Web / APIs":   ["react", "django", "flask", "fastapi", "nodejs",
-                     "rest api", "graphql", "html", "css"],
-}
-
-def extract_skills(text):
-    text_lower = text.lower()
-    found = {}
-    for domain, skills in SKILLS_VOCABULARY.items():
-        matched = [s for s in skills if s in text_lower]
-        if matched:
-            found[domain] = matched
-    return found
 
 def compute_jd_match(jd_text, resume_text):
     jd_vec  = tfidf.transform([lemmatize_text(clean_resume(jd_text))])
@@ -411,6 +394,14 @@ if st.session_state.page == "screen":
                 placeholder="Paste your resume content here...",
                 label_visibility="collapsed")
 
+        st.markdown("**🧠 Model**")
+        use_bert = st.toggle("Use BERT (all-MiniLM-L6-v2)", value=False,
+                             help="TF-IDF is fast and deterministic. "
+                                  "BERT uses semantic sentence embeddings (384-dim) "
+                                  "for richer generalisation on unseen resume styles.")
+        if use_bert:
+            st.caption("⚡ BERT model loads on first use (~90 MB download)")
+
         predict_btn = st.button("🔍 Analyze Resume")
 
     with col_right:
@@ -420,8 +411,22 @@ if st.session_state.page == "screen":
             if not resume_text.strip():
                 st.error("⚠️ Please upload a PDF or paste resume text first!")
             else:
-                with st.spinner("🧠 AI is analyzing your resume..."):
-                    category, probs = predict_category(resume_text)
+                if use_bert:
+                    with st.spinner("🧠 Loading BERT model & generating embeddings…"):
+                        bert_data, bert_encoder = _load_bert()
+                    if bert_data is None:
+                        st.error("⚠️ BERT model unavailable — `sentence-transformers` is not installed. "
+                                 "Falling back to TF-IDF.")
+                        category, probs = predict_category(resume_text)
+                        model_label = model_name + " (TF-IDF fallback)"
+                    else:
+                        with st.spinner("🧠 BERT is analyzing your resume…"):
+                            category, probs = predict_category_bert(resume_text, bert_data, bert_encoder)
+                        model_label = bert_data['model_name']
+                else:
+                    with st.spinner("🧠 AI is analyzing your resume..."):
+                        category, probs = predict_category(resume_text)
+                    model_label = model_name
 
                 top_conf = probs.max() * 100
                 conf_label = (
@@ -433,7 +438,10 @@ if st.session_state.page == "screen":
                 <div class="result-box">
                     <h2>Predicted Job Category</h2>
                     <h1>{category}</h1>
-                    <span class="conf-pill">{conf_label} &mdash; {top_conf:.1f}%</span>
+                    <span class="conf-pill">{conf_label} &mdash; {top_conf:.1f}%</span><br>
+                    <span style='font-size:0.8rem;opacity:0.7;margin-top:6px;display:inline-block'>
+                        via {model_label}
+                    </span>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -448,16 +456,9 @@ if st.session_state.page == "screen":
 
                 skills = extract_skills(resume_text)
                 if skills:
-                    _domain_class = {
-                        "Languages":    "badge-languages",
-                        "ML / AI":      "badge-ml",
-                        "Data":         "badge-data",
-                        "Cloud / DevOps": "badge-cloud",
-                        "Web / APIs":   "badge-web",
-                    }
                     st.markdown("#### 🛠️ Skills Detected")
                     for domain, skill_list in skills.items():
-                        cls = _domain_class.get(domain, "badge-languages")
+                        cls = DOMAIN_BADGE_CLASS.get(domain, "badge-languages")
                         badges = " ".join(
                             f"<span class='badge-base {cls}'>{s}</span>"
                             for s in skill_list
@@ -537,13 +538,6 @@ elif st.session_state.page == "match":
                 ranked.sort(key=lambda x: x["score"], reverse=True)
 
             medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
-            _domain_class = {
-                "Languages":      "badge-languages",
-                "ML / AI":        "badge-ml",
-                "Data":           "badge-data",
-                "Cloud / DevOps": "badge-cloud",
-                "Web / APIs":     "badge-web",
-            }
             for i, r in enumerate(ranked):
                 score_cls = (
                     "score-high"   if r["score"] >= 70
@@ -564,11 +558,10 @@ elif st.session_state.page == "match":
                         )
                     with c2:
                         if r["skills"]:
-                            all_skills_by_domain = r["skills"]
                             st.markdown("**Skills found:**")
                             badges_html = ""
-                            for domain, slist in all_skills_by_domain.items():
-                                cls = _domain_class.get(domain, "badge-languages")
+                            for domain, slist in r["skills"].items():
+                                cls = DOMAIN_BADGE_CLASS.get(domain, "badge-languages")
                                 for s in slist[:4]:
                                     badges_html += f"<span class='badge-base {cls}'>{s}</span> "
                             st.markdown(badges_html, unsafe_allow_html=True)
