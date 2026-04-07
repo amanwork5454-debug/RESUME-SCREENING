@@ -16,10 +16,13 @@ st.set_page_config(
 # ── Custom CSS ──
 st.markdown("""
 <style>
+    /* ── Base ── */
     .stApp {
         background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
         color: white;
     }
+
+    /* ── Hero ── */
     .hero {
         text-align: center;
         padding: 40px 20px 20px 20px;
@@ -30,13 +33,70 @@ st.markdown("""
         background: linear-gradient(90deg, #a78bfa, #60a5fa, #34d399);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        background-size: 200% auto;
+        animation: gradientShift 4s linear infinite;
         margin-bottom: 10px;
+    }
+    @keyframes gradientShift {
+        0%   { background-position: 0% center; }
+        100% { background-position: 200% center; }
     }
     .hero p {
         font-size: 1.2rem;
         color: #94a3b8;
         margin-bottom: 30px;
     }
+    /* typewriter effect on hero subtitle */
+    .hero .typewriter {
+        display: inline-block;
+        overflow: hidden;
+        border-right: 3px solid #a78bfa;
+        white-space: nowrap;
+        animation: typing 3.5s steps(60,end) forwards,
+                   blink 0.75s step-end infinite;
+    }
+    @keyframes typing {
+        from { width: 0; }
+        to   { width: 100%; }
+    }
+    @keyframes blink {
+        from, to { border-color: transparent; }
+        50%      { border-color: #a78bfa; }
+    }
+
+    /* ── Nav bar ── */
+    .nav-bar {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin: 0 0 20px 0;
+        flex-wrap: wrap;
+    }
+    .nav-btn {
+        padding: 10px 24px;
+        border-radius: 50px;
+        border: 1px solid rgba(255,255,255,0.15);
+        background: rgba(255,255,255,0.06);
+        color: #94a3b8;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+    .nav-btn:hover {
+        background: rgba(99,102,241,0.25);
+        border-color: #6366f1;
+        color: white;
+    }
+    .nav-btn.active {
+        background: linear-gradient(90deg, #6366f1, #8b5cf6);
+        border-color: transparent;
+        color: white;
+        box-shadow: 0 0 16px rgba(99,102,241,0.5);
+    }
+
+    /* ── Metric card ── */
     .metric-card {
         background: rgba(255,255,255,0.05);
         border: 1px solid rgba(255,255,255,0.1);
@@ -44,6 +104,12 @@ st.markdown("""
         padding: 20px;
         text-align: center;
         backdrop-filter: blur(10px);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .metric-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 30px rgba(99,102,241,0.3);
+        border-color: rgba(99,102,241,0.5);
     }
     .metric-card h3 {
         color: #94a3b8;
@@ -58,12 +124,16 @@ st.markdown("""
         font-weight: 700;
         margin: 0;
     }
+
+    /* ── Result box ── */
     .result-box {
         background: linear-gradient(135deg, #6366f1, #8b5cf6);
         border-radius: 16px;
         padding: 30px;
         text-align: center;
         margin: 20px 0;
+        box-shadow: 0 0 30px rgba(99,102,241,0.4);
+        animation: fadeInUp 0.4s ease;
     }
     .result-box h2 {
         color: white;
@@ -79,13 +149,58 @@ st.markdown("""
         font-weight: 800;
         margin: 0;
     }
+    .result-box .conf-pill {
+        display: inline-block;
+        margin-top: 12px;
+        padding: 4px 16px;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        background: rgba(255,255,255,0.2);
+        color: white;
+    }
+
+    /* ── Step card ── */
     .step-card {
         background: rgba(255,255,255,0.05);
         border-radius: 12px;
         padding: 15px;
         border-left: 4px solid #6366f1;
         margin-bottom: 10px;
+        transition: border-color 0.2s;
     }
+    .step-card:hover {
+        border-left-color: #34d399;
+    }
+
+    /* ── Skill badges ── */
+    .badge-languages   { background: rgba(99,102,241,0.3); color: #c4b5fd; }
+    .badge-ml          { background: rgba(52,211,153,0.25); color: #6ee7b7; }
+    .badge-data        { background: rgba(96,165,250,0.25); color: #93c5fd; }
+    .badge-cloud       { background: rgba(251,191,36,0.2);  color: #fcd34d; }
+    .badge-web         { background: rgba(244,63,94,0.2);   color: #fda4af; }
+    .badge-base {
+        display: inline-block;
+        border-radius: 6px;
+        padding: 2px 8px;
+        margin: 2px 3px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        vertical-align: middle;
+    }
+
+    /* ── Match score colours ── */
+    .score-high   { color: #34d399; font-weight: 700; }
+    .score-medium { color: #fbbf24; font-weight: 700; }
+    .score-low    { color: #f87171; font-weight: 700; }
+
+    /* ── Animations ── */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(12px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Misc overrides ── */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     .stDeployButton {display:none;}
@@ -104,13 +219,15 @@ st.markdown("""
         font-size: 1rem !important;
         font-weight: 600 !important;
         width: 100% !important;
+        transition: box-shadow 0.2s !important;
+    }
+    .stButton > button:hover {
+        box-shadow: 0 0 18px rgba(99,102,241,0.5) !important;
     }
     .stProgress > div > div {
         background: linear-gradient(90deg, #6366f1, #34d399) !important;
     }
-    .stRadio label {
-        color: white !important;
-    }
+    .stRadio label { color: white !important; }
     .stRadio div {
         background: transparent !important;
         display: flex !important;
@@ -135,10 +252,7 @@ st.markdown("""
         background: rgba(99,102,241,0.3) !important;
         border-color: #6366f1 !important;
     }
-    div[role="radiogroup"] label p {
-        color: white !important;
-        margin: 0 !important;
-    }
+    div[role="radiogroup"] label p { color: white !important; margin: 0 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -238,27 +352,35 @@ def compute_jd_match(jd_text, resume_text):
 st.markdown("""
 <div class="hero">
     <h1>🤖 Resume Screening AI</h1>
-    <p>Powered by NLP & Machine Learning — Instantly predict job categories from any resume</p>
+    <p><span class="typewriter">Powered by NLP &amp; Machine Learning — Instantly predict job categories from any resume</span></p>
 </div>
 """, unsafe_allow_html=True)
 
 # ── Navigation ──
-col1, col2, col3, col4, col5 = st.columns([1,1,1,1,1])
-with col1:
-    if st.button("📄 Screen Resume"):
-        st.session_state.page = "screen"
-with col2:
-    if st.button("🎯 JD Match"):
-        st.session_state.page = "match"
-with col3:
-    if st.button("📊 Model Stats"):
-        st.session_state.page = "stats"
-with col4:
-    if st.button("ℹ️ About"):
-        st.session_state.page = "about"
-
 if 'page' not in st.session_state:
     st.session_state.page = "screen"
+
+_pages = [
+    ("screen", "📄 Screen Resume"),
+    ("match",  "🎯 JD Match"),
+    ("stats",  "📊 Model Stats"),
+    ("about",  "ℹ️ About"),
+]
+
+nav_html = '<div class="nav-bar">'
+for key, label in _pages:
+    cls = "nav-btn active" if st.session_state.page == key else "nav-btn"
+    nav_html += f'<span class="{cls}">{label}</span>'
+nav_html += '</div>'
+st.markdown(nav_html, unsafe_allow_html=True)
+
+# Actual clickable buttons (hidden behind the styled nav; kept for interactivity)
+_nav_cols = st.columns(len(_pages))
+for i, (key, label) in enumerate(_pages):
+    with _nav_cols[i]:
+        if st.button(label, key=f"nav_{key}"):
+            st.session_state.page = key
+            st.rerun()
 
 st.markdown("---")
 
@@ -301,10 +423,17 @@ if st.session_state.page == "screen":
                 with st.spinner("🧠 AI is analyzing your resume..."):
                     category, probs = predict_category(resume_text)
 
+                top_conf = probs.max() * 100
+                conf_label = (
+                    "🟢 High confidence" if top_conf >= 70
+                    else "🟡 Medium confidence" if top_conf >= 40
+                    else "🔴 Low confidence"
+                )
                 st.markdown(f"""
                 <div class="result-box">
                     <h2>Predicted Job Category</h2>
                     <h1>{category}</h1>
+                    <span class="conf-pill">{conf_label} &mdash; {top_conf:.1f}%</span>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -319,11 +448,18 @@ if st.session_state.page == "screen":
 
                 skills = extract_skills(resume_text)
                 if skills:
+                    _domain_class = {
+                        "Languages":    "badge-languages",
+                        "ML / AI":      "badge-ml",
+                        "Data":         "badge-data",
+                        "Cloud / DevOps": "badge-cloud",
+                        "Web / APIs":   "badge-web",
+                    }
                     st.markdown("#### 🛠️ Skills Detected")
                     for domain, skill_list in skills.items():
-                        badges = " &nbsp;".join(
-                            f"<code style='background:rgba(99,102,241,0.25);"
-                            f"border-radius:4px;padding:2px 6px'>{s}</code>"
+                        cls = _domain_class.get(domain, "badge-languages")
+                        badges = " ".join(
+                            f"<span class='badge-base {cls}'>{s}</span>"
                             for s in skill_list
                         )
                         st.markdown(
@@ -401,7 +537,19 @@ elif st.session_state.page == "match":
                 ranked.sort(key=lambda x: x["score"], reverse=True)
 
             medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
+            _domain_class = {
+                "Languages":      "badge-languages",
+                "ML / AI":        "badge-ml",
+                "Data":           "badge-data",
+                "Cloud / DevOps": "badge-cloud",
+                "Web / APIs":     "badge-web",
+            }
             for i, r in enumerate(ranked):
+                score_cls = (
+                    "score-high"   if r["score"] >= 70
+                    else "score-medium" if r["score"] >= 40
+                    else "score-low"
+                )
                 with st.expander(
                     f"{medals[i]}  {r['name']}  —  Match: {r['score']:.1f}%",
                     expanded=(i == 0)
@@ -409,19 +557,21 @@ elif st.session_state.page == "match":
                     c1, c2 = st.columns([3, 2])
                     with c1:
                         st.progress(int(min(r["score"], 100)))
-                        st.markdown(f"**Predicted Category:** `{r['category']}`")
+                        st.markdown(
+                            f"**Match score:** <span class='{score_cls}'>{r['score']:.1f}%</span>"
+                            f"&nbsp;&nbsp;|&nbsp;&nbsp;**Predicted Category:** `{r['category']}`",
+                            unsafe_allow_html=True
+                        )
                     with c2:
                         if r["skills"]:
-                            all_skills = [s for v in r["skills"].values() for s in v]
+                            all_skills_by_domain = r["skills"]
                             st.markdown("**Skills found:**")
-                            st.markdown(
-                                " &nbsp;".join(
-                                    f"<code style='background:rgba(99,102,241,0.25);"
-                                    f"border-radius:4px;padding:2px 6px'>{s}</code>"
-                                    for s in all_skills[:10]
-                                ),
-                                unsafe_allow_html=True
-                            )
+                            badges_html = ""
+                            for domain, slist in all_skills_by_domain.items():
+                                cls = _domain_class.get(domain, "badge-languages")
+                                for s in slist[:4]:
+                                    badges_html += f"<span class='badge-base {cls}'>{s}</span> "
+                            st.markdown(badges_html, unsafe_allow_html=True)
 
             st.markdown("""
             <div style='background:rgba(99,102,241,0.12);
