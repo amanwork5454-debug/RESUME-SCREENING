@@ -115,3 +115,14 @@ class TestExtractSkills:
         cd = skills.get("Cloud / DevOps", [])
         assert "Docker" in cd
         assert "Kubernetes" in cd
+
+    def test_detects_cpp(self):
+        """'C++' should be detected as a C++ skill."""
+        skills = extract_skills("Experienced C++ developer with 5 years")
+        assert "C++" in skills.get("Languages", [])
+
+    def test_no_false_positive_cpp_from_plain_c(self):
+        """Text with only 'c' (no '++') should NOT match C++."""
+        skills = extract_skills("machine learning accounting experienced")
+        langs = skills.get("Languages", [])
+        assert "C++" not in langs

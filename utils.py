@@ -12,7 +12,7 @@ SKILLS = {
         "JavaScript":   ["javascript", r"\bjs\b"],
         "TypeScript":   ["typescript", r"\bts\b"],
         "Java":         ["java"],
-        "C++":          ["c++"],
+        "C++":          [r"c\+\+"],
         "C#":           ["c#"],
         "Scala":        ["scala"],
         "Kotlin":       ["kotlin"],

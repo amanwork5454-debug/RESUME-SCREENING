@@ -6,4 +6,3 @@ data/processed_resumes.csv
 Thumbs.db
 .DS_Store
 data/bert_embeddings.npy
-data/processed_resumes.csv
