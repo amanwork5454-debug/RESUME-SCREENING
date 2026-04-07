@@ -2,10 +2,8 @@ import streamlit as st
 import pickle
 import re
 import pypdf
-import nltk
-from nltk.stem import WordNetLemmatizer
-from nltk.corpus import stopwords as nltk_stopwords
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 
 # ── Page Config ──
 st.set_page_config(
@@ -144,16 +142,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ── NLTK Resources ──
-@st.cache_resource
-def _load_nltk():
-    nltk.download('wordnet', quiet=True)
-    nltk.download('omw-1.4', quiet=True)
-    nltk.download('stopwords', quiet=True)
-    return WordNetLemmatizer(), set(nltk_stopwords.words('english'))
-
-_lemmatizer, _stop_words = _load_nltk()
-
 # ── Load Model ──
 @st.cache_resource
 def _load_model():
@@ -183,8 +171,7 @@ def clean_resume(text):
 
 def lemmatize_text(text):
     words = text.split()
-    words = [_lemmatizer.lemmatize(w) for w in words
-             if w not in _stop_words and len(w) > 2]
+    words = [w for w in words if w not in ENGLISH_STOP_WORDS and len(w) > 2]
     return ' '.join(words)
 
 def extract_text_from_pdf(pdf_file):
