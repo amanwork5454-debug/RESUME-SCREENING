@@ -5,6 +5,7 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import PyPDF2
+from sklearn.metrics.pairwise import cosine_similarity
 
 nltk.download('stopwords', quiet=True)
 nltk.download('wordnet', quiet=True)
@@ -194,6 +195,39 @@ def predict_category(text):
     category   = le.inverse_transform([prediction])[0]
     return category, probs
 
+# ── Skill Vocabulary ──
+SKILLS_VOCABULARY = {
+    "Languages":    ["python", "java", "javascript", "typescript", "c++", "c#",
+                     "scala", "kotlin", "swift", "go", "rust", "php", "ruby",
+                     "matlab", "julia"],
+    "ML / AI":      ["machine learning", "deep learning", "nlp",
+                     "computer vision", "tensorflow", "pytorch", "keras",
+                     "scikit-learn", "bert", "transformers", "xgboost",
+                     "lightgbm", "reinforcement learning", "llm"],
+    "Data":         ["sql", "pandas", "numpy", "spark", "hadoop", "kafka",
+                     "tableau", "power bi", "postgresql", "mysql", "mongodb",
+                     "airflow", "dbt"],
+    "Cloud / DevOps": ["aws", "azure", "gcp", "docker", "kubernetes", "git",
+                       "linux", "terraform", "jenkins"],
+    "Web / APIs":   ["react", "django", "flask", "fastapi", "nodejs",
+                     "rest api", "graphql", "html", "css"],
+}
+
+def extract_skills(text):
+    text_lower = text.lower()
+    found = {}
+    for domain, skills in SKILLS_VOCABULARY.items():
+        matched = [s for s in skills if s in text_lower]
+        if matched:
+            found[domain] = matched
+    return found
+
+def compute_jd_match(jd_text, resume_text):
+    jd_vec  = tfidf.transform([lemmatize_text(clean_resume(jd_text))])
+    res_vec = tfidf.transform([lemmatize_text(clean_resume(resume_text))])
+    score   = cosine_similarity(jd_vec, res_vec)[0][0]
+    return float(score) * 100
+
 # ── Hero Section ──
 st.markdown("""
 <div class="hero">
@@ -204,9 +238,12 @@ st.markdown("""
 
 # ── Navigation ──
 col1, col2, col3, col4, col5 = st.columns([1,1,1,1,1])
-with col2:
+with col1:
     if st.button("📄 Screen Resume"):
         st.session_state.page = "screen"
+with col2:
+    if st.button("🎯 JD Match"):
+        st.session_state.page = "match"
 with col3:
     if st.button("📊 Model Stats"):
         st.session_state.page = "stats"
@@ -273,6 +310,20 @@ if st.session_state.page == "screen":
                     emoji = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"][i]
                     st.markdown(f"{emoji} **{cat}** — `{prob:.1f}%`")
                     st.progress(int(prob))
+
+                skills = extract_skills(resume_text)
+                if skills:
+                    st.markdown("#### 🛠️ Skills Detected")
+                    for domain, skill_list in skills.items():
+                        badges = " &nbsp;".join(
+                            f"<code style='background:rgba(99,102,241,0.25);"
+                            f"border-radius:4px;padding:2px 6px'>{s}</code>"
+                            for s in skill_list
+                        )
+                        st.markdown(
+                            f"<span style='color:#94a3b8'><strong>{domain}:</strong></span> {badges}",
+                            unsafe_allow_html=True
+                        )
         else:
             st.markdown("""
             <div style='text-align:center; padding:60px 20px;
@@ -286,7 +337,103 @@ if st.session_state.page == "screen":
             """, unsafe_allow_html=True)
 
 # ══════════════════════════════
-# PAGE 2: MODEL STATS
+# PAGE 2: JD MATCH RANKER
+# ══════════════════════════════
+elif st.session_state.page == "match":
+    st.markdown("### 🎯 Resume–JD Match Ranker")
+    st.markdown(
+        "<p style='color:#94a3b8'>Paste a Job Description and upload up to 5 resumes "
+        "— they are ranked by cosine similarity so you can see who fits best.</p>",
+        unsafe_allow_html=True
+    )
+
+    col_jd, col_uploads = st.columns([1, 1], gap="large")
+
+    with col_jd:
+        st.markdown("#### 📋 Job Description")
+        jd_text = st.text_area(
+            "", height=300,
+            placeholder="Paste job description here...",
+            label_visibility="collapsed",
+            key="jd_input"
+        )
+
+    with col_uploads:
+        st.markdown("#### 📤 Upload Resumes (up to 5 PDFs)")
+        uploaded_resumes = st.file_uploader(
+            "", type=["pdf"],
+            accept_multiple_files=True,
+            label_visibility="collapsed",
+            key="resume_uploads"
+        )
+        if uploaded_resumes:
+            count = min(len(uploaded_resumes), 5)
+            st.info(f"✅ {count} resume(s) ready")
+        match_btn = st.button("🔍 Rank Resumes")
+
+    if match_btn:
+        if not jd_text.strip():
+            st.error("⚠️ Please paste a job description first!")
+        elif not uploaded_resumes:
+            st.error("⚠️ Please upload at least one resume PDF!")
+        else:
+            st.markdown("---")
+            st.markdown("### 📊 Ranking Results")
+            with st.spinner("🧠 Computing match scores..."):
+                ranked = []
+                for f in uploaded_resumes[:5]:
+                    resume_text = extract_text_from_pdf(f)
+                    score    = compute_jd_match(jd_text, resume_text)
+                    category, _ = predict_category(resume_text)
+                    skills   = extract_skills(resume_text)
+                    ranked.append({
+                        "name": f.name,
+                        "score": score,
+                        "category": category,
+                        "skills": skills,
+                    })
+                ranked.sort(key=lambda x: x["score"], reverse=True)
+
+            medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
+            for i, r in enumerate(ranked):
+                with st.expander(
+                    f"{medals[i]}  {r['name']}  —  Match: {r['score']:.1f}%",
+                    expanded=(i == 0)
+                ):
+                    c1, c2 = st.columns([3, 2])
+                    with c1:
+                        st.progress(int(min(r["score"], 100)))
+                        st.markdown(f"**Predicted Category:** `{r['category']}`")
+                    with c2:
+                        if r["skills"]:
+                            all_skills = [s for v in r["skills"].values() for s in v]
+                            st.markdown("**Skills found:**")
+                            st.markdown(
+                                " &nbsp;".join(
+                                    f"<code style='background:rgba(99,102,241,0.25);"
+                                    f"border-radius:4px;padding:2px 6px'>{s}</code>"
+                                    for s in all_skills[:10]
+                                ),
+                                unsafe_allow_html=True
+                            )
+
+            st.markdown("""
+            <div style='background:rgba(99,102,241,0.12);
+                        border-radius:12px; padding:16px;
+                        border:1px solid rgba(99,102,241,0.3);
+                        margin-top:20px'>
+                <strong>💡 How Match Score Works</strong><br>
+                <span style='color:#94a3b8; font-size:0.9rem'>
+                TF-IDF cosine similarity measures shared domain vocabulary between the JD
+                and each resume. Treat scores as a <em>relative ranking signal</em> — a
+                resume with 42% isn't a bad candidate, it just uses fewer of the exact
+                keywords in this JD. Combine with the predicted category and skill list
+                for a fuller picture.
+                </span>
+            </div>""", unsafe_allow_html=True)
+
+# ══════════════════════════════
+# PAGE 3: MODEL STATS
 # ══════════════════════════════
 elif st.session_state.page == "stats":
     st.markdown("### 📊 Model Performance")
@@ -343,7 +490,7 @@ elif st.session_state.page == "stats":
         </div>""", unsafe_allow_html=True)
 
 # ══════════════════════════════
-# PAGE 3: ABOUT
+# PAGE 4: ABOUT
 # ══════════════════════════════
 elif st.session_state.page == "about":
     st.markdown("### ℹ️ About This Project")

@@ -11,6 +11,8 @@ An NLP-powered AI tool that automatically screens resumes and predicts the most 
 - 📄 Upload PDF resume or paste text directly
 - 🎯 Predicts job category from 25 options instantly
 - 📊 Shows top 5 matching categories with confidence scores
+- 🛠️ **Skill extraction** — auto-detects Languages, ML/AI, Data, Cloud, and Web skills
+- 🔍 **Resume–JD Match Ranker** — paste a Job Description, upload up to 5 resumes, get them ranked by cosine similarity
 - 🤖 3 ML models compared (TF-IDF based)
 - 🧠 DistilBERT transformer model implemented & compared
 - 🚀 Deployed live on Streamlit Cloud
@@ -24,6 +26,8 @@ An NLP-powered AI tool that automatically screens resumes and predicts the most 
 4. **Lemmatization** — Reduces words to root form
 5. **TF-IDF Vectorization** — Converts text to 1500 numerical features
 6. **ML Classification** — Predicts job category from 25 options
+7. **Skill Detection** — Keyword matching across 5 technology domains
+8. **JD Matching** — TF-IDF cosine similarity between job description and resumes
 
 ---
 
@@ -48,6 +52,28 @@ An NLP-powered AI tool that automatically screens resumes and predicts the most 
 
 ---
 
+## ⚠️ Limitations & Honest Analysis
+
+This project demonstrates NLP classification and semantic similarity on a clean,
+well-labelled dataset. There are a few things to be aware of:
+
+- **High accuracy is expected on this dataset.** Resume text contains highly
+  domain-specific vocabulary (e.g. "VLSI" only appears in Electrical Engineering
+  resumes), making the classes nearly linearly separable. Real-world performance
+  would be lower on messy, multi-role, or ambiguous resumes.
+- **JD match scores are relative, not absolute.** Cosine similarity on TF-IDF
+  vectors measures keyword overlap, not semantic understanding. A score of 35% is
+  not "bad" — use it to rank candidates relative to each other, not as a pass/fail
+  threshold.
+- **Skill extraction is keyword-based.** It finds known technology names in plain
+  text. It won't catch synonyms (e.g. "Py" for Python) or skills described in
+  narrative form.
+- **Dataset size.** With 962 resumes across 25 categories (~38 per class), the
+  model has not seen the full distribution of real-world resume styles. Collecting
+  more diverse data would improve robustness.
+
+---
+
 ## 🏷️ 25 Supported Job Categories
 Data Science, Java Developer, Python Developer, DevOps Engineer,
 Web Designing, HR, Testing, Blockchain, ETL Developer, Hadoop,
@@ -64,7 +90,7 @@ SAP Developer, Advocate, Arts, Operations Manager
 | Python 3.11 | Core language |
 | NLTK | Text preprocessing, lemmatization |
 | TF-IDF | Text vectorization (1500 features) |
-| Scikit-learn | ML models, evaluation, cross validation |
+| Scikit-learn | ML models, evaluation, cross validation, cosine similarity |
 | HuggingFace | DistilBERT transformer model |
 | Sentence-Transformers | BERT embeddings (768 dimensions) |
 | PyPDF2 | PDF text extraction |
@@ -78,7 +104,7 @@ SAP Developer, Advocate, Arts, Operations Manager
 ```
 resume-screening/
 ├── app.py                          # Streamlit dashboard
-├── requirements.txt                # Python dependencies
+├── requirements.txt                # Pinned Python dependencies
 ├── README.md                       # Project documentation
 ├── models/
 │   ├── resume_model.pkl            # TF-IDF + Random Forest model
