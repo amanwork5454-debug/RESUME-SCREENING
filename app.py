@@ -4,7 +4,7 @@ import pypdf
 from sklearn.metrics.pairwise import cosine_similarity
 from utils import (
     clean_resume, lemmatize_text, extract_skills,
-    SKILLS, DOMAIN_BADGE_CLASS,
+    DOMAIN_BADGE_CLASS,
 )
 
 # ── Page Config ──
@@ -418,15 +418,18 @@ if st.session_state.page == "screen":
                         st.error("⚠️ BERT model unavailable — `sentence-transformers` is not installed. "
                                  "Falling back to TF-IDF.")
                         category, probs = predict_category(resume_text)
-                        model_label = model_name + " (TF-IDF fallback)"
+                        model_label      = model_name + " (TF-IDF fallback)"
+                        active_categories = categories
                     else:
                         with st.spinner("🧠 BERT is analyzing your resume…"):
                             category, probs = predict_category_bert(resume_text, bert_data, bert_encoder)
-                        model_label = bert_data['model_name']
+                        model_label       = bert_data['model_name']
+                        active_categories = bert_data['categories']
                 else:
                     with st.spinner("🧠 AI is analyzing your resume..."):
                         category, probs = predict_category(resume_text)
-                    model_label = model_name
+                    model_label       = model_name
+                    active_categories = categories
 
                 top_conf = probs.max() * 100
                 conf_label = (
@@ -448,7 +451,7 @@ if st.session_state.page == "screen":
                 st.markdown("#### 📊 Top 5 Matching Categories")
                 top5_idx = probs.argsort()[-5:][::-1]
                 for i, idx in enumerate(top5_idx):
-                    cat  = categories[idx]
+                    cat  = active_categories[idx]
                     prob = probs[idx] * 100
                     emoji = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"][i]
                     st.markdown(f"{emoji} **{cat}** — `{prob:.1f}%`")
@@ -651,9 +654,9 @@ elif st.session_state.page == "about":
             ("1", "Text Extraction",     "Reads PDF or accepts pasted text"),
             ("2", "Text Cleaning",       "Removes URLs, symbols, special characters"),
             ("3", "Stopword Filtering",  "Removes common words using sklearn ENGLISH_STOP_WORDS"),
-            ("4", "TF-IDF Vectorization","Converts text to 1500 numerical features"),
+            ("4", "Vectorization",       "TF-IDF (1500 features) or BERT semantic embeddings (384-dim) — selectable via toggle"),
             ("5", "ML Classification",   "Best Pipeline predicts from 25 categories"),
-            ("6", "Skill Detection",     "Keyword matching across 5 technology domains"),
+            ("6", "Skill Detection",     "Regex-based matching with abbreviation support across 5 domains"),
         ]
         for num, title, desc in steps:
             st.markdown(f"""
@@ -665,12 +668,13 @@ elif st.session_state.page == "about":
     with col2:
         st.markdown("#### 📦 Tech Stack")
         techs = [
-            ("🐍", "Python 3.11",   "Core language"),
-            ("🔤", "sklearn",       "Stopword filtering (ENGLISH_STOP_WORDS)"),
-            ("🔢", "TF-IDF",        "Text vectorization (1500 features)"),
-            ("🌲", "Scikit-learn",  "ML pipelines & evaluation"),
-            ("📄", "pypdf",         "PDF text extraction"),
-            ("🚀", "Streamlit",     "Web app framework"),
+            ("🐍", "Python 3.11",             "Core language"),
+            ("🔤", "sklearn",                  "Stopword filtering (ENGLISH_STOP_WORDS)"),
+            ("🔢", "TF-IDF",                   "Text vectorization (1500 features)"),
+            ("🤗", "sentence-transformers",    "BERT embeddings via all-MiniLM-L6-v2 (384-dim)"),
+            ("🌲", "Scikit-learn",             "ML pipelines, evaluation & cosine similarity"),
+            ("📄", "pypdf",                    "PDF text extraction"),
+            ("🚀", "Streamlit",                "Web app framework"),
         ]
         for emoji, name, desc in techs:
             st.markdown(f"""
