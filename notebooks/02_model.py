@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -20,43 +21,46 @@ le = LabelEncoder()
 df['Category_encoded'] = le.fit_transform(df['Category'])
 print(f"Categories: {list(le.classes_)}")
 
-# ── TF-IDF Vectorization ──
-tfidf = TfidfVectorizer(max_features=1500, stop_words='english',
-                         ngram_range=(1,2))
-X = tfidf.fit_transform(df['processed_resume'])
+# ── Features & Target (raw text — vectorizer fitted inside Pipeline) ──
+X = df['processed_resume']
 y = df['Category_encoded']
 
-print(f"\nTF-IDF matrix shape: {X.shape}")
-
-# ── Train/Test Split ──
+# ── Train/Test Split BEFORE any vectorization (prevents data leakage) ──
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y)
 
 print(f"Train size: {X_train.shape[0]}")
 print(f"Test size:  {X_test.shape[0]}")
 
-# ── Train 3 Models ──
-models = {
-    'Logistic Regression': LogisticRegression(max_iter=1000, random_state=42),
-    'Random Forest':       RandomForestClassifier(n_estimators=200, random_state=42),
-    'SVM':                 SVC(kernel='linear', probability=True, random_state=42)
+def _tfidf():
+    return TfidfVectorizer(max_features=1500, stop_words='english', ngram_range=(1, 2))
+
+# ── Train 3 Pipelines (TF-IDF fitted only on training data) ──
+pipelines = {
+    'Logistic Regression': Pipeline([('tfidf', _tfidf()),
+                                      ('clf', LogisticRegression(max_iter=1000, random_state=42))]),
+    'Random Forest':       Pipeline([('tfidf', _tfidf()),
+                                      ('clf', RandomForestClassifier(n_estimators=200, random_state=42))]),
+    'SVM':                 Pipeline([('tfidf', _tfidf()),
+                                      ('clf', SVC(kernel='linear', probability=True, random_state=42))]),
 }
 
 results = {}
-for name, model in models.items():
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
+for name, pipeline in pipelines.items():
+    pipeline.fit(X_train, y_train)
+    y_pred = pipeline.predict(X_test)
     acc = accuracy_score(y_test, y_pred)
-    cv  = cross_val_score(model, X, y, cv=5, scoring='accuracy').mean()
-    results[name] = {'model': model, 'accuracy': acc, 'cv': cv, 'y_pred': y_pred}
+    # CV only on training data — keeps test set truly held-out
+    cv  = cross_val_score(pipeline, X_train, y_train, cv=5, scoring='accuracy').mean()
+    results[name] = {'pipeline': pipeline, 'accuracy': acc, 'cv': cv, 'y_pred': y_pred}
     print(f"\n{name}:")
     print(f"  Accuracy : {acc:.4f} ({acc*100:.1f}%)")
     print(f"  CV Acc   : {cv:.4f} ({cv*100:.1f}%)")
 
-# ── Best Model ──
-best_name = max(results, key=lambda x: results[x]['accuracy'])
+# ── Best Model (selected by CV accuracy, not test accuracy) ──
+best_name = max(results, key=lambda x: results[x]['cv'])
 best = results[best_name]
-print(f"\n✅ Best Model: {best_name} (Accuracy: {best['accuracy']*100:.1f}%)")
+print(f"\n✅ Best Model: {best_name} (CV Accuracy: {best['cv']*100:.1f}%)")
 
 # ── Classification Report ──
 print(f"\nClassification Report ({best_name}):")
@@ -102,10 +106,11 @@ plt.savefig('notebooks/model_comparison.png')
 plt.show()
 print("✅ Model comparison chart saved")
 
-# ── Save Model ──
+# ── Save Best Pipeline ──
+best_pipeline = best['pipeline']
 model_data = {
-    'model':      best['model'],
-    'tfidf':      tfidf,
+    'model':      best_pipeline,                              # full Pipeline
+    'tfidf':      best_pipeline.named_steps['tfidf'],        # for JD matching
     'le':         le,
     'model_name': best_name,
     'accuracy':   best['accuracy'],

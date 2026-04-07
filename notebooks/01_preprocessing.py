@@ -1,16 +1,9 @@
 import pandas as pd
 import numpy as np
 import re
-import nltk
-from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 import matplotlib.pyplot as plt
 import seaborn as sns
-
-# Download NLTK data
-nltk.download('stopwords')
-nltk.download('wordnet')
-nltk.download('omw-1.4')
 
 # ── Load Data ──
 df = pd.read_csv('data/UpdatedResumeDataSet.csv')
@@ -42,14 +35,10 @@ def clean_resume(text):
 # ── Apply Cleaning ──
 df['cleaned_resume'] = df['Resume'].apply(clean_resume)
 
-# ── Lemmatization ──
-lemmatizer = WordNetLemmatizer()
-stop_words = set(stopwords.words('english'))
-
+# ── Stopword Filtering ──
 def lemmatize_text(text):
     words = text.split()
-    words = [lemmatizer.lemmatize(w) for w in words
-             if w not in stop_words and len(w) > 2]
+    words = [w for w in words if w not in ENGLISH_STOP_WORDS and len(w) > 2]
     return ' '.join(words)
 
 df['processed_resume'] = df['cleaned_resume'].apply(lemmatize_text)
