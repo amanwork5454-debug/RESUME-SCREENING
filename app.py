@@ -209,6 +209,7 @@ st.markdown("""
     .stTextArea textarea {
         background: rgba(255,255,255,0.05) !important;
         color: white !important;
+        -webkit-text-fill-color: white !important;
         border: 1px solid rgba(255,255,255,0.2) !important;
         border-radius: 12px !important;
     }
