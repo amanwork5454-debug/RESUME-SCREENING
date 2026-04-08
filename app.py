@@ -209,6 +209,7 @@ st.markdown("""
     .stTextArea textarea {
         background: rgba(255,255,255,0.05) !important;
         color: white !important;
+        -webkit-text-fill-color: white !important;
         border: 1px solid rgba(255,255,255,0.2) !important;
         border-radius: 12px !important;
     }
@@ -255,6 +256,10 @@ st.markdown("""
         border-color: #6366f1 !important;
     }
     div[role="radiogroup"] label p { color: white !important; margin: 0 !important; }
+
+    /* ── Toggle label & caption visibility on dark background ── */
+    .stToggle label, .stToggle p { color: white !important; }
+    [data-testid="stCaptionContainer"] p { color: #c4b5fd !important; }
 </style>
 """, unsafe_allow_html=True)
 
