@@ -259,6 +259,9 @@ st.markdown("""
 
     /* ── Toggle label & caption visibility on dark background ── */
     .stToggle label, .stToggle p { color: white !important; }
+    [data-testid="stToggle"] label,
+    [data-testid="stToggle"] p,
+    [data-testid="stToggle"] span { color: white !important; }
     [data-testid="stCaptionContainer"] p { color: #c4b5fd !important; }
 </style>
 """, unsafe_allow_html=True)
