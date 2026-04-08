@@ -41,7 +41,7 @@ st.markdown("""
     }
     .hero p {
         font-size: 1.2rem;
-        color: #94a3b8;
+        color: white;
         margin-bottom: 30px;
     }
     /* typewriter effect on hero subtitle */
