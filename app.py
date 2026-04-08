@@ -32,11 +32,7 @@ st.markdown("""
     .hero h1 {
         font-size: 3.5rem;
         font-weight: 800;
-        background: linear-gradient(90deg, #a78bfa, #60a5fa, #34d399);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-size: 200% auto;
-        animation: gradientShift 4s linear infinite;
+        color: white;
         margin-bottom: 10px;
     }
     @keyframes gradientShift {
