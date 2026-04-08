@@ -207,9 +207,9 @@ st.markdown("""
     footer {visibility: hidden;}
     .stDeployButton {display:none;}
     .stTextArea textarea {
-        background: rgba(255,255,255,0.05) !important;
-        color: white !important;
-        -webkit-text-fill-color: white !important;
+        background: rgba(15,12,41,0.85) !important;
+        color: #e2e8f0 !important;
+        -webkit-text-fill-color: #e2e8f0 !important;
         border: 1px solid rgba(255,255,255,0.2) !important;
         border-radius: 12px !important;
     }
@@ -259,6 +259,9 @@ st.markdown("""
 
     /* ── Toggle label & caption visibility on dark background ── */
     .stToggle label, .stToggle p { color: white !important; }
+    [data-testid="stToggle"] label,
+    [data-testid="stToggle"] p,
+    [data-testid="stToggle"] span { color: white !important; }
     [data-testid="stCaptionContainer"] p { color: #c4b5fd !important; }
 </style>
 """, unsafe_allow_html=True)
