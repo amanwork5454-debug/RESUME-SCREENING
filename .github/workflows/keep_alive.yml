@@ -30,7 +30,7 @@ jobs:
           from selenium.webdriver.support import expected_conditions as EC
           import time
 
-          STREAMLIT_URL = "https://aman-resume-screening.streamlit.app/"
+          STREAMLIT_URL = "https://aman-resume-screening.streamlit.app"
 
           options = Options()
           options.add_argument("--headless")
