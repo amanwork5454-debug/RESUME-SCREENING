@@ -32,9 +32,10 @@ jobs:
 
           # All Streamlit app URLs
           STREAMLIT_URLS = [
-              "https://aman-resume-screening.streamlit.app",
-              "https://aman-customer-analytics.streamlit.app",
-          ]
+    "https://aman-resume-screening.streamlit.app",
+    "https://aman-customer-analytics.streamlit.app",
+    "https://study-assistant-aman.streamlit.app",
+]
 
           def wake_app(url):
               options = Options()
