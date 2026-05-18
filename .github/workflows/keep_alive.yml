@@ -2,8 +2,8 @@ name: Keep Streamlit App Alive
 
 on:
   schedule:
-    - cron: '0 * * * *'  # Runs every 1 hour
-  workflow_dispatch:  # Allows manual trigger
+    - cron: '0 * * * *'
+  workflow_dispatch:
 
 jobs:
   wake_up:
@@ -22,7 +22,7 @@ jobs:
 
       - name: Wake up Streamlit Apps
         run: |
-          python - <<'EOF'
+          python3 << 'EOF'
           from selenium import webdriver
           from selenium.webdriver.common.by import By
           from selenium.webdriver.chrome.options import Options
@@ -30,12 +30,11 @@ jobs:
           from selenium.webdriver.support import expected_conditions as EC
           import time
 
-          # All Streamlit app URLs
           STREAMLIT_URLS = [
-    "https://aman-resume-screening.streamlit.app",
-    "https://aman-customer-analytics.streamlit.app",
-    "https://study-assistant-aman.streamlit.app",
-]
+              "https://aman-resume-screening.streamlit.app",
+              "https://aman-customer-analytics.streamlit.app",
+              "https://study-assistant-aman.streamlit.app",
+          ]
 
           def wake_app(url):
               options = Options()
@@ -44,32 +43,27 @@ jobs:
               options.add_argument("--disable-dev-shm-usage")
               options.add_argument("--disable-gpu")
               options.binary_location = "/usr/bin/chromium-browser"
-
               driver = webdriver.Chrome(options=options)
-
               try:
-                  print(f"\n🔍 Visiting {url}...")
+                  print(f"\n Visiting {url}...")
                   driver.get(url)
                   time.sleep(5)
-
                   try:
                       wake_button = WebDriverWait(driver, 10).until(
                           EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Yes, get this app back up')]"))
                       )
                       wake_button.click()
-                      print(f"✅ Wake-up button clicked for {url}")
+                      print(f"Wake-up button clicked for {url}")
                       time.sleep(10)
                   except:
-                      print(f"✅ App already awake: {url}")
-
+                      print(f"App already awake: {url}")
               except Exception as e:
-                  print(f"❌ Error for {url}: {e}")
-
+                  print(f"Error for {url}: {e}")
               finally:
                   driver.quit()
 
           for url in STREAMLIT_URLS:
               wake_app(url)
 
-          print("\n🎉 All apps checked!")
+          print("\nAll apps checked!")
           EOF
